@@ -8,7 +8,8 @@ from geopy.geocoders import Nominatim
 # --- 🛠️ 工具函式庫 ---
 
 def get_coordinates(place_name):
-    geolocator = Nominatim(user_agent="hiking_helper_lite_v2")
+    """取得地點座標 (用於查天氣與顯示確認地圖)"""
+    geolocator = Nominatim(user_agent="hiking_helper_lite")
     try:
         search_query = f"台灣 {place_name}"
         location = geolocator.geocode(search_query, timeout=10)
@@ -19,6 +20,7 @@ def get_coordinates(place_name):
         return None, None, None
 
 def get_weather_forecast(lat, lon):
+    """查詢 Open-Meteo 天氣 (含日出日落)"""
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": lat,
@@ -44,6 +46,9 @@ def get_weather_forecast(lat, lon):
         return None
 
 def generate_full_details(mountain_name, route_name, date_obj, weather_info=None, custom_notes=""):
+    """
+    🏭 行事曆內容工廠
+    """
     details = []
     
     # 1. 【手動備註】
@@ -106,12 +111,42 @@ def generate_full_details(mountain_name, route_name, date_obj, weather_info=None
 
 st.set_page_config(page_title="登山行程整合助手", page_icon="🏔️", layout="centered")
 
-# Session 初始化 (確保變數存在)
+# Session 初始化
 if 'weather_df' not in st.session_state: st.session_state.weather_df = None
 if 'searched_mountain' not in st.session_state: st.session_state.searched_mountain = ""
 if 'map_coords' not in st.session_state: st.session_state.map_coords = None
 
 st.title("🏔️ 登山行程整合助手")
+
+# --- 🔗 頂部區：健行筆記導流 (已修正) ---
+with st.expander("📖 前往健行筆記 (搜尋路線/路況)", expanded=True):
+    st.markdown("請先在健行筆記確認路線難度與最新路況，再回來安排天氣與行程。")
+    
+    # 👇👇👇 改用 HTML 寫法，強制 iOS 跳轉 Safari 👇👇👇
+    link_url = "https://hiking.biji.co/index.php?node=search"
+    st.markdown(
+        f'''
+        <a href="{link_url}" target="_blank" style="text-decoration: none;">
+            <div style="
+                width: 100%; 
+                background-color: #ff4b4b; 
+                color: white; 
+                padding: 10px 12px; 
+                text-align: center; 
+                border-radius: 8px; 
+                font-family: sans-serif;
+                font-weight: 600;
+                margin-top: 10px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            ">
+                🏃 前往健行筆記網站 (開啟 Safari)
+            </div>
+        </a>
+        ''',
+        unsafe_allow_html=True
+    )
+
+st.divider()
 
 # --- 🌤️ 第一區：天氣與日照查詢 ---
 st.subheader("1️⃣ 天氣與日照查詢")
@@ -128,6 +163,7 @@ with c2:
 if btn_search and search_input:
     with st.spinner(f"正在定位「{search_input}」..."):
         lat, lon, addr = get_coordinates(search_input)
+        
         if lat:
             st.session_state.map_coords = (lat, lon)
             st.session_state.searched_mountain = search_input
@@ -167,7 +203,7 @@ st.subheader("2️⃣ 確認行程 & 加入行事曆")
 
 with st.form("confirm_form"):
     target_name = st.text_input("📍 目的地山岳", value=st.session_state.searched_mountain)
-    route_name = st.text_input("🚩 路線/備註 (選填)", placeholder="例如：西北稜 O 型")
+    route_name = st.text_input("🚩 路線/備註 (選填)", placeholder="例如：西北稜 O 型、小溪營地露營")
     
     c_date, c_time = st.columns(2)
     with c_date:
@@ -176,28 +212,15 @@ with st.form("confirm_form"):
         hiking_time = st.time_input("起登時間", value=datetime.time(6, 0))
 
     st.write("---")
-    
-    # 👇👇👇 這裡做了重大優化！ 👇👇👇
-    
-    # 1. 增加「快速開啟」按鈕在筆記上方，方便你切換
-    st.caption("需要查路況或集合地點嗎？點擊下方按鈕，查完回來繼續貼上。")
-    st.link_button("🏃 開啟健行筆記搜尋", "https://hiking.biji.co/index.php?node=search", use_container_width=True)
-
-    # 2. 增加 key="user_notes" (這是防止資料消失的關鍵！)
-    # 就算你切換視窗回來導致頁面重新整理，Streamlit 也會記得這裡面的字
-    custom_notes = st.text_area(
-        "📝 手動筆記 (集合地點、裝備清單等)", 
-        placeholder="在此貼上健行筆記的資訊...",
-        height=150,
-        key="user_notes" 
-    )
+    custom_notes = st.text_area("📝 手動筆記 (集合地點、裝備清單等)", 
+                                placeholder="在此輸入筆記，將會顯示在行事曆內容的最上方...",
+                                height=100)
 
     submitted = st.form_submit_button("✅ 確認並生成行程連結", use_container_width=True, type="primary")
 
 if submitted and target_name:
     st.success(f"已建立行程：**{target_name}**")
     
-    # 取得天氣
     selected_date_str = hiking_date.strftime("%Y-%m-%d")
     day_weather_info = None
     if st.session_state.weather_df is not None:
@@ -211,11 +234,7 @@ if submitted and target_name:
                 'sunset': day_row.iloc[0]['日落']
             }
             
-    # 這裡我們使用 st.session_state.user_notes 來抓取內容
-    # 因為表單提交時，key 綁定的值才是最新的
-    notes_content = st.session_state.user_notes
-            
-    details_text = generate_full_details(target_name, route_name, hiking_date, day_weather_info, notes_content)
+    details_text = generate_full_details(target_name, route_name, hiking_date, day_weather_info, custom_notes)
     
     if route_name:
         cal_title = f"⛰️ {target_name} - {route_name}"
@@ -239,9 +258,9 @@ if submitted and target_name:
 
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
-        st.link_button("🗺️ Google Maps", map_url, use_container_width=True)
+        st.link_button("🗺️ Google Maps 導航", map_url, use_container_width=True)
     with col_btn2:
-        st.link_button("📅 Google 行事曆", cal_url, use_container_width=True)
+        st.link_button("📅 加入 Google 行事曆", cal_url, use_container_width=True)
     
     with st.expander("👀 預覽行事曆最終內容", expanded=True):
         st.text(f"標題：{cal_title}")
