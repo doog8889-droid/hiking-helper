@@ -121,30 +121,8 @@ st.title("🏔️ 登山行程整合助手")
 # --- 🔗 頂部區：健行筆記導流 (已修正) ---
 with st.expander("📖 前往健行筆記 (搜尋路線/路況)", expanded=True):
     st.markdown("請先在健行筆記確認路線難度與最新路況，再回來安排天氣與行程。")
-    
-    # 👇👇👇 改用 HTML 寫法，強制 iOS 跳轉 Safari 👇👇👇
-    link_url = "https://hiking.biji.co/index.php?node=search"
-    st.markdown(
-        f'''
-        <a href="{link_url}" target="_blank" style="text-decoration: none;">
-            <div style="
-                width: 100%; 
-                background-color: #ff4b4b; 
-                color: white; 
-                padding: 10px 12px; 
-                text-align: center; 
-                border-radius: 8px; 
-                font-family: sans-serif;
-                font-weight: 600;
-                margin-top: 10px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            ">
-                🏃 前往健行筆記網站 (開啟 Safari)
-            </div>
-        </a>
-        ''',
-        unsafe_allow_html=True
-    )
+    # 👇👇👇 這裡修改了！改用 st.link_button 👇👇👇
+    st.link_button("🏃 前往健行筆記網站", "https://hiking.biji.co/index.php?node=search", use_container_width=True)
 
 st.divider()
 
