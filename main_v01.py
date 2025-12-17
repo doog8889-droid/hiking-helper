@@ -192,17 +192,17 @@ with st.form("confirm_form"):
     st.write("---")
 
     default_template = """【集合資訊(這邊還在修)】
-    📍 地點：
-    ⏰ 時間：
-    🚗 車手/共乘：
+📍 地點：
+⏰ 時間：
+🚗 車手/共乘：
 
-    【費用明細】
-    💰 車資：
-    💰 公糧：
+【費用明細】
+💰 車資：
+💰 公糧：
 
-    【緊急聯絡】
-    ☎️ 留守人："""
-    
+【緊急聯絡】
+☎️ 留守人："""
+
     custom_notes = st.text_area("📝 手動筆記 (集合地點、裝備清單等)", 
                                 placeholder="在此輸入筆記，將會顯示在行事曆內容的最上方...",
                                 value=default_template,
