@@ -190,8 +190,22 @@ with st.form("confirm_form"):
         hiking_time = st.time_input("起登時間", value=datetime.time(6, 0))
 
     st.write("---")
+
+    default_template = """【集合資訊(這邊還在修)】
+    📍 地點：
+    ⏰ 時間：
+    🚗 車手/共乘：
+
+    【費用明細】
+    💰 車資：
+    💰 公糧：
+
+    【緊急聯絡】
+    ☎️ 留守人："""
+    
     custom_notes = st.text_area("📝 手動筆記 (集合地點、裝備清單等)", 
                                 placeholder="在此輸入筆記，將會顯示在行事曆內容的最上方...",
+                                value=default_template,
                                 height=300)
 
     submitted = st.form_submit_button("✅ 確認並生成行程連結", use_container_width=True, type="primary")
@@ -244,4 +258,3 @@ if submitted and target_name:
         st.text(f"標題：{cal_title}")
         st.text("-" * 30)
         st.text(details_text)
-
