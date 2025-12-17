@@ -192,7 +192,7 @@ with st.form("confirm_form"):
     st.write("---")
     custom_notes = st.text_area("📝 手動筆記 (集合地點、裝備清單等)", 
                                 placeholder="在此輸入筆記，將會顯示在行事曆內容的最上方...",
-                                height=100)
+                                height=300)
 
     submitted = st.form_submit_button("✅ 確認並生成行程連結", use_container_width=True, type="primary")
 
@@ -244,3 +244,4 @@ if submitted and target_name:
         st.text(f"標題：{cal_title}")
         st.text("-" * 30)
         st.text(details_text)
+
